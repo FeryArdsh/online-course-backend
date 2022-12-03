@@ -9,7 +9,9 @@ import {
 	logoutStudent,
 	logoutStudentFromAllDevices,
 	createInstructor,
+	updateStudentImg,
 } from "../controllers/auth.js";
+import upload from "../middleware/multerUpload.js";
 
 const router = express.Router();
 
@@ -23,5 +25,5 @@ router
 	.route("/profile/me")
 	.get(authMiddleware, getStudentProfile)
 	.put(authMiddleware, updateStudentProfile);
-
+router.put("/profile/me/img", authMiddleware, upload.single("myFile"), updateStudentImg)
 export default router;

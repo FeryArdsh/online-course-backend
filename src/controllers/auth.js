@@ -181,6 +181,40 @@ const updateStudentProfile = asyncHandler(async (req, res) => {
 	}
 });
 
+//@desc Update Student Image
+//@route /profile/me
+//@access private
+const updateStudentImg = asyncHandler(async (req, res) => {
+	if (!req.body) {
+		res.status(404);
+		throw new Error("Fields is required");
+	}
+
+	let uploadRes;
+	try {
+		uploadRes = await cloudinary.v2.uploader.upload(req.body.image, {
+			folder: "image",
+			resource_type: "auto",
+		});
+	} catch (error) {
+		return res.status(400).json({ message: error });
+	}
+
+	const student = await Student.findByIdAndUpdate(req.student._id, {
+		set$:{
+			"imgProfil.public_id": uploadRes.public_id,
+            "imgProfil.url": uploadRes.secure_url,
+		}
+	});
+
+	if(!student){
+		res.status(404);
+		throw new Error("Student not found");
+	}
+
+	res.status(200).json({message: "Success update data"});
+});
+
 // @desc Logout Student
 // @route /logout
 // @access Private
@@ -210,5 +244,6 @@ export {
 	loginStudent,
 	logoutStudent,
 	logoutStudentFromAllDevices,
-	createInstructor
+	createInstructor,
+	updateStudentImg
 };
