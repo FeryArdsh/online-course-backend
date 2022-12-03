@@ -4,29 +4,34 @@ import courseReviewSchema from "./CourseReview.js";
 const { Schema } = mongoose;
 
 const CourseSchema = new Schema({
-	title: {
+	ttl: {
 		type: String,
 		required: true,
 		unique: true,
 	},
-	description: {
+	desc: {
 		type: String,
 		required: true,
 	},
+	fullDesc: {
+		type: String,
+		required: true,
+	},
+	courseRequirements: [String],
 	createdBy: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Instructor",
 		required: true,
 	},
-	authorName: {
-		type: String,
-		required: true,
+	img: {
+		public_id: String,
+		url: String,
 	},
 	languageOfCourse: {
 		type: String,
-		default: "English",
+		default: "english",
 	},
-	numOfStudents: {
+	enrolled: {
 		type: Number,
 		default: 0,
 	},
@@ -44,21 +49,21 @@ const CourseSchema = new Schema({
 		type: String,
 		required: true,
 	},
-	price: {
+	badge: {
+		type: String,
+	},
+	prc: {
 		type: Number,
 		required: true,
-		max: 1000,
 	},
-	courseImage: {
-		type: Buffer,
+	newPrc: {
+		type: Number,
+		required: true,
 	},
-	courseRequirements: [
-		{
-			requirement: {
-				type: String,
-			},
-		},
-	],
+	disc: {
+		type: Number,
+		required: true,
+	},
 	courseReviews: [courseReviewSchema],
 });
 

@@ -13,12 +13,15 @@ const addReview = asyncHandler(async (req, res) => {
 	const { reviewText, rating } = req.body;
 
 	const course = await Course.findById(req.params.id);
+	if (!course) {
+		res.status(404);
+		throw new Error("No Course");
+	}
 
 	const purchasedCourse = findCourseInPurchasedCourses(
 		req.student,
 		req.params.id,
 	);
-
 	if (!purchasedCourse) {
 		res.status(404);
 		throw new Error("Buy the course to review it.");
@@ -32,7 +35,6 @@ const addReview = asyncHandler(async (req, res) => {
 	}
 
 	const review = {
-		name: req.student.name,
 		reviewText,
 		rating,
 		user: req.student._id,

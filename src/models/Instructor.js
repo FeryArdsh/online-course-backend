@@ -3,10 +3,6 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const InstructorSchema = new Schema({
-	name: {
-		type: String,
-		required: true,
-	},
 	profession: {
 		type: String,
 		required: true,
@@ -14,7 +10,6 @@ const InstructorSchema = new Schema({
 	},
 	aboutMe: {
 		type: String,
-		maxlength: 200,
 	},
 	studentID: {
 		type: mongoose.Schema.Types.ObjectId,
@@ -36,8 +31,15 @@ const InstructorSchema = new Schema({
 		type: Number,
 		default: 0,
 	},
-	image: {
-		type: Buffer,
+	avgRating: {
+		type: Number,
+		min: 0,
+		max: 5,
+		default: 0,
+	},
+	numberOfStudent: {
+		type: Number,
+		default: 0,
 	},
 });
 

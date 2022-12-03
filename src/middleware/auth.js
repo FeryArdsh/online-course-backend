@@ -3,7 +3,9 @@ import Student from "../models/Student.js";
 
 const authMiddleware = async (req, res, next) => {
 	const token = req.header("x-auth-token");
-
+	if(!token){
+		return res.status(403).send({ error: "Not Authorized" });
+	}
 	try {
 		const decodedStudent = await jwt.verify(token, process.env.SECRET_KEY);
 

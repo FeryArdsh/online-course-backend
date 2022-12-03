@@ -22,24 +22,16 @@ const createStudent = asyncHandler(async (req, res) => {
 	const { name, email, password, headline, isInstructor, profession, aboutMe } =
 		req.body;
 
-	if (!name) {
+	if (!name && !email && !password) {
 		res.status(404);
-		throw new Error("Name is required");
-	}
-	if (!email) {
-		res.status(404);
-		throw new Error("Email is required");
-	}
-	if (!password) {
-		res.status(404);
-		throw new Error("Password is required");
+		throw new Error("Fields is required");
 	}
 
 	const isStudent = await Student.findOne({ email });
 
 	if (isStudent) {
 		res.status(404);
-		throw new Error("Student already exists.");
+		throw new Error("Email already exists.");
 	}
 
 	const student = new Student({
@@ -69,47 +61,37 @@ const createStudent = asyncHandler(async (req, res) => {
 // @desc Register Instructor
 // @route /signup
 // @access Public
-// const createInstructor = asyncHandler(async (req, res) => {
-// 	const { name, email, password, headline, isInstructor, profession, aboutMe } =
-// 		req.body;
-// 	const studentId = req.student._id
-// 	console.log(studentId)
+const createInstructor = asyncHandler(async (req, res) => {
+	const { profession, aboutMe } = req.body;
+	const studentId = req.student._id
 
-// 	if (!name) {
-// 		res.status(404);
-// 		throw new Error("Name is required");
-// 	}
+	if (!profession && !aboutMe) {
+		res.status(404);
+		throw new Error("Fields required");
+	}
 
-// 	const isStudent = await Student.findOne({ email });
 
-// 	if (isStudent) {
-// 		res.status(404);
-// 		throw new Error("Student already exists.");
-// 	}
+	const isStudent = await Student.findByIdAndUpdate(studentId, {
+		isInstructor: true
+	});
+	if (!isStudent) {
+		res.status(404);
+		throw new Error("Can't update data");
+	}
+	
+	try {
+		const instructorData = new Instructor({
+			studentID: studentId,
+			profession,
+			aboutMe,
+		})
+		await instructorData.save()
+	} catch (error) {
+		return res.status(201).json(error);
+	}
 
-// 	const student = new Student({
-// 		name,
-// 		email,
-// 		password,
-// 		isInstructor,
-// 		headline: headline ? headline : "",
-// 	});
-
-// 	if (isInstructor) {
-// 		const instructor = new Instructor({
-// 			name: student.name,
-// 			studentID: student._id,
-// 			profession,
-// 			aboutMe,
-// 		});
-
-// 		await instructor.save();
-// 	}
-
-// 	const token = await student.generateAuthToken();
-
-// 	res.status(201).json({ name, email, headline, token });
-// });
+	res.status(201).json({message: "Success add data"});
+});
 
 
 // @desc Login Student
@@ -228,4 +210,5 @@ export {
 	loginStudent,
 	logoutStudent,
 	logoutStudentFromAllDevices,
+	createInstructor
 };

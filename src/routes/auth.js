@@ -8,6 +8,7 @@ import {
 	loginStudent,
 	logoutStudent,
 	logoutStudentFromAllDevices,
+	createInstructor,
 } from "../controllers/auth.js";
 
 const router = express.Router();
@@ -15,6 +16,7 @@ const router = express.Router();
 router.get("/all", getAllStudentProfile);
 router.post("/signup", createStudent);
 router.post("/login", loginStudent);
+router.post("/add-instructor",authMiddleware, createInstructor);
 router.post("/logout", authMiddleware, logoutStudent);
 router.post("/logout/all", authMiddleware, logoutStudentFromAllDevices);
 router

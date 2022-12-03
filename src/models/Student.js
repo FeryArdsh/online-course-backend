@@ -25,6 +25,14 @@ const StudentSchema = new Schema(
 			type: String,
 			maxlength: 50,
 		},
+		imgProfil: {
+            public_id: String,
+            url: {
+                type: String,
+                default:
+                    "https://gravatar.com/avatar/c78f7619065feb1b84555a528d25f60d?s=400&d=mp&r=x",
+            },
+        },
 		isInstructor: {
 			type: Boolean,
 			default: false,
