@@ -1,34 +1,18 @@
 import Course from '../models/Course.js';
 import asyncHandler from 'express-async-handler';
 import Instructor from '../models/Instructor.js';
+import cloudinary from '../config/cloudinary.js';
 
 //@ desc Get all courses
 //@ route /courses
 //@ access Public/ for testing only
 const getAllCourses = asyncHandler(async (req, res) => {
-	const courses = await Course.find(
-		{},
-		{
-			title: 1,
-			createdBy: 1,
-			price: 1,
-			courseImage: 1,
-			authorName: 1,
-			courseImage: 1,
-		},
-	);
-	//Get specific fields from mongodb
+	const courses = await Course.find();
 
 	if (courses.length === 0) {
-		res.status(400);
+		res.status(404);
 		throw new Error('No courses found');
 	}
-
-	// courses.forEach((course) => {
-	// 	console.log(course.courseImage);
-	// 	console.log(course.courseImage.data);
-	// 	course.courseImage.data.toString("base64");
-	// });
 
 	res.status(200).json({ courses });
 });
@@ -37,11 +21,11 @@ const getAllCourses = asyncHandler(async (req, res) => {
 //@ route /course
 //@ access Private
 const createCourse = asyncHandler(async (req, res) => {
-	const { title, description, languageOfCourse, category, price } = req.body;
+	const { ttl, desc, fullDesc, languageOfCourse, level, category, prc, img, courseRequirements } = req.body;
 
-	if (price > 1000) {
+	if (!ttl && !desc && !fullDesc && !img) {
 		res.status(400);
-		throw new Error('Price should be less than 1000');
+		throw new Error('Fields is required');
 	}
 
 	const instructor = await Instructor.findOne({ studentID: req.student._id });
@@ -51,14 +35,31 @@ const createCourse = asyncHandler(async (req, res) => {
 		throw new Error('Could not find Instructor');
 	}
 
+	let uploadRes;
+	try {
+		uploadRes = await cloudinary.v2.uploader.upload(img, {
+			folder: "courseImg",
+			resource_type: "auto",
+		});
+	} catch (error) {
+		return res.status(400).json({ message: error });
+	}
+
 	const course = new Course({
 		createdBy: instructor._id,
-		title,
-		authorName: req.student.name,
-		description,
+		ttl,
+		desc,
+		fullDesc,
 		languageOfCourse,
 		category,
-		price,
+		prc,
+		newPrc: prc,
+		level,
+		courseRequirements,
+		img: {
+			public_id: uploadRes.public_id,
+			url: uploadRes.secure_url
+		}
 	});
 
 	instructor.courses.push(course._id);
@@ -72,21 +73,42 @@ const createCourse = asyncHandler(async (req, res) => {
 	res.status(201).json({ course });
 });
 
-//@ desc Add course Image
-//@ route /course/id/image
+//@ desc Add course videos
+//@ route /course/id/videos
 //@ access Private
-const addCourseImage = asyncHandler(async (req, res) => {
-	const course = await Course.findById(req.params.id);
+const addCourseVideos = asyncHandler(async (req, res) => {
+	const course = await Course.findByIdAndUpdate(req.params.id, {
+		$push: {
+			videos: { $each: req.body }
+		}
+	});
 
-	if (course.courseImage) {
-		res.status(400);
-		throw new Error('Image already exists');
+	if (!course) {
+		res.status(404);
+		throw new Error('Course not exists');
 	}
 
-	course.courseImage = req.file.buffer;
+	await course.save();
+	res.status(201).json({ message: 'Videos added successfully.', data: course });
+});
+
+//@ desc Update course videos
+//@ route /course/id/videos
+//@ access Private
+const updateCourseVideos = asyncHandler(async (req, res) => {
+	const course = await Course.findByIdAndUpdate(req.params.id, {
+		$set: {
+			videos: req.body
+		}
+	});
+
+	if (!course) {
+		res.status(404);
+		throw new Error('Course not exists');
+	}
 
 	await course.save();
-	res.status(201).json({ message: 'Image added successfully.' });
+	res.status(201).json({ message: 'Videos added successfully.', data: course });
 });
 
 //@ desc Get A specific course
@@ -111,4 +133,4 @@ const getCourse = asyncHandler(async (req, res) => {
 	res.status(200).json({ course });
 });
 
-export { getAllCourses, createCourse, getCourse, addCourseImage };
+export { getAllCourses, createCourse, getCourse, addCourseVideos, updateCourseVideos };

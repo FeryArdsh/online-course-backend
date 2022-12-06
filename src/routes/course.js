@@ -4,29 +4,11 @@ import {
 	getAllCourses,
 	createCourse,
 	getCourse,
-	addCourseImage,
+	addCourseVideos,
+	updateCourseVideos,
 } from "../controllers/course.js";
-import multer from "multer";
+import upload from "../middleware/multerUpload.js";
 const router = express.Router();
-
-//Use multer to upload Image
-const uploadImage = multer({
-	limits: {
-		fileSize: 10000000,
-	},
-	fileFilter(req, file, cb) {
-		if (
-			!file.originalname.endsWith(file.originalname.split(".")[1]) ||
-			!file.originalname.endsWith(file.originalname.split(".")[1]) ||
-			!file.originalname.endsWith(file.originalname.split(".")[1])
-		) {
-			console.log(file.originalname.split(".")[1]);
-			return cb(new Error("Please provide the right file"));
-		}
-
-		cb(undefined, true);
-	},
-});
 
 router.get("/courses", getAllCourses);
 
@@ -35,13 +17,14 @@ router
 	.post(authMiddleware, instructorMiddleware, createCourse);
 
 router
-	.route("/course/:id/image")
+	.route("/course/:id/videos")
 	.post(
 		authMiddleware,
 		instructorMiddleware,
-		uploadImage.single("upload"),
-		addCourseImage,
-	);
+		upload.single("myFile"),
+		addCourseVideos,
+	)
+	.put(authMiddleware, instructorMiddleware, updateCourseVideos)
 
 router.route("/course/:id").get(getCourse);
 

@@ -79,6 +79,10 @@ const CourseSchema = new Schema({
 	},
 	disc: {
 		type: Number,
+		default: 0,
+	},
+	level: {
+		type: String,
 		required: true,
 	},
 	courseReviews: [courseReviewSchema],
