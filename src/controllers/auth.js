@@ -1,6 +1,7 @@
 import Student from "../models/Student.js";
 import asyncHandler from "express-async-handler";
 import Instructor from "../models/Instructor.js";
+import cloudinary from "../config/cloudinary.js"
 
 // @desc Get all students
 // @route /
@@ -185,7 +186,7 @@ const updateStudentProfile = asyncHandler(async (req, res) => {
 //@route /profile/me
 //@access private
 const updateStudentImg = asyncHandler(async (req, res) => {
-	if (!req.body) {
+	if (!req.body.image) {
 		res.status(404);
 		throw new Error("Fields is required");
 	}
@@ -201,11 +202,13 @@ const updateStudentImg = asyncHandler(async (req, res) => {
 	}
 
 	const student = await Student.findByIdAndUpdate(req.student._id, {
-		set$:{
-			"imgProfil.public_id": uploadRes.public_id,
-            "imgProfil.url": uploadRes.secure_url,
+		$set: {
+			imgProfil: {
+				public_id: uploadRes.public_id,
+				url: uploadRes.secure_url,
+			}
 		}
-	});
+	}).catch((error)=>console.log(error, "Studentttt"));
 
 	if(!student){
 		res.status(404);

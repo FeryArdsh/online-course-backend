@@ -60,6 +60,23 @@ const CourseSchema = new Schema({
 		type: Number,
 		required: true,
 	},
+	videos: [
+		{
+			section: String,
+			sectionDuration: Number,
+			video: [
+				{
+					title: String,
+					url: String,
+					duration: Number
+				}
+			]
+		}
+	],
+	totalDuration: {
+		type: Number,
+		default: 0,
+	},
 	disc: {
 		type: Number,
 		required: true,
