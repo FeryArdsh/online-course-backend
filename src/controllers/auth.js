@@ -144,7 +144,7 @@ const getStudentProfile = asyncHandler(async (req, res) => {
 const updateStudentProfile = asyncHandler(async (req, res) => {
 	const student = await Student.findById(req.student._id);
 
-	const { name, email, headline, isInstructor, profession, aboutMe } = req.body;
+	const { name, email, headline } = req.body;
 
 	if (student) {
 		student.name = name || student.name;
@@ -155,26 +155,11 @@ const updateStudentProfile = asyncHandler(async (req, res) => {
 			student.password = req.body.password;
 		}
 
-		if (isInstructor) {
-			student.isInstructor = true;
-
-			const instructor = new Instructor({
-				name: student.name,
-				profession,
-				aboutMe,
-				studentID: student._id,
-			});
-
-			await instructor.save();
-		}
-
 		await student.save();
 		res.status(200).json({
 			_id: student._id,
 			name: student.name,
 			email: student.email,
-			headline: student.headline,
-			isInstructor: student.isInstructor,
 		});
 	} else {
 		res.status(404);

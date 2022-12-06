@@ -54,25 +54,22 @@ const updateInstructorProfile = asyncHandler(async (req, res) => {
 //@route /profile/instructor/:id
 //@access Private
 const deleteInstructorProfile = asyncHandler(async (req, res) => {
-	const instructor = await Instructor.findByIdAndRemove(req.params.id);
-	const student = await Student.findById(req.student._id);
+	const instructor = await Instructor.findByIdAndDelete(req.params.id);
+	if(!instructor){
+		res.status(404);
+		throw new Error("Could not find instructor");
+	}
 
+	const student = await Student.findById(instructor.studentID);
 	if (!student) {
 		res.status(404);
 		throw new Error("Could not find student profile");
 	}
 
 	student.isInstructor = false;
-
 	await student.save();
-	await instructor.save();
 
-	if (instructor) {
-		res.status(200).json({ instructor });
-	} else {
-		res.status(404);
-		throw new Error("Could not find instructor");
-	}
+	res.status(200).json({ message: "Success delete data" });
 });
 
 //@desc Get Courses made by Instructor
