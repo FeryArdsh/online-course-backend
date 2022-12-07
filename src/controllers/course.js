@@ -82,14 +82,21 @@ const addCourseVideos = asyncHandler(async (req, res) => {
 			videos: { $each: req.body }
 		}
 	});
-
+	
 	if (!course) {
 		res.status(404);
 		throw new Error('Course not exists');
 	}
 
-	await course.save();
-	res.status(201).json({ message: 'Videos added successfully.', data: course });
+	const totalDuration = await Course.findById(req.params.id)
+	let tot = 0
+	totalDuration.videos.forEach((dur)=>{
+		tot += dur.sectionDuration
+	})
+
+	totalDuration.totalDuration = tot
+	await totalDuration.save();
+	res.status(201).json({ message: 'Videos added successfully.', data: totalDuration });
 });
 
 //@ desc Update course videos
@@ -98,16 +105,32 @@ const addCourseVideos = asyncHandler(async (req, res) => {
 const updateCourseVideos = asyncHandler(async (req, res) => {
 	const course = await Course.findByIdAndUpdate(req.params.id, {
 		$set: {
-			videos: req.body
+			"videos.$[outer].section": req.body.titleSection,
+			"videos.$[outer].video.$[inner].title": req.body.title,
+			"videos.$[outer].video.$[inner].url": req.body.url,
+			"videos.$[outer].video.$[inner].duration": req.body.duration,
 		}
+	}, {
+		arrayFilters: [
+			{"outer._id": req.body.idSection},
+			{"inner._id": req.body.idVideo}
+		]
 	});
 
 	if (!course) {
 		res.status(404);
 		throw new Error('Course not exists');
 	}
-
 	await course.save();
+
+	const totalDuration = await Course.findById(req.params.id)
+	let tot = 0
+	totalDuration.videos.forEach((dur)=>{
+		tot += dur.sectionDuration
+	})
+
+	totalDuration.totalDuration = tot
+	await totalDuration.save();
 	res.status(201).json({ message: 'Videos added successfully.', data: course });
 });
 
@@ -115,6 +138,18 @@ const updateCourseVideos = asyncHandler(async (req, res) => {
 //@ route /course/id
 //@ access Public
 const getCourse = asyncHandler(async (req, res) => {
+	const sumTotalDur = await Course.aggregate([
+		{
+			$group: {
+				_id: null,
+				totalDuration: {
+					$sum: {$sum: videos.sectionDuration}
+				}
+			}
+		}
+	])
+
+	console.log(sumTotalDur)
 	const course = await Course.findById(req.params.id)
 		.populate('createdBy', [
 			'name',
