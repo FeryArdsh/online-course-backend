@@ -78,38 +78,124 @@ const addReview = asyncHandler(async (req, res) => {
     res.status(201).json({ message: "Course Reviewed" });
 });
 
+//@ desc updated a Review
+//@ route /course/id/reviews
+//@ access Private
+const updateReview = asyncHandler(async (req, res) => {
+    const { reviewText, rating } = req.body;
+
+    const course = await Course.findOneAndUpdate(
+        {
+            _id: req.params.id,
+        },
+        {
+            $set: {
+                "courseReviews.$[outer].reviewText": reviewText,
+                "courseReviews.$[outer].rating": rating,
+            },
+        },
+        {
+            arrayFilters: [{ "outer.user": req.student._id }],
+        }
+    );
+    if (!course) {
+        res.status(404);
+        throw new Error("No Course");
+    }
+
+    const newCourse = await Course.findById(req.params.id);
+
+    newCourse.avgRating =
+        newCourse.courseReviews.reduce((acc, review) => {
+            return review.rating + acc;
+        }, 0) / course.courseReviews.length;
+
+    await newCourse.save();
+
+    const getTotalRating = await Instructor.findById(course.createdBy).populate(
+        "courses",
+        "avgRating"
+    );
+    const divide = getTotalRating.courses.filter((rating) => {
+        return rating.avgRating >= 1;
+    });
+
+    getTotalRating.avgRating =
+        getTotalRating.courses.reduce((acc, review) => {
+            return review.avgRating + acc;
+        }, 0) / divide.length;
+
+    await getTotalRating.save();
+    res.status(201).json({ message: "Course Review updated" });
+});
+
 //@ desc Remove a Review
 //@ route /course/id/reviews
 //@ access Private
-const deleteReview = asyncHandler(async (req, res) => {
-    const purchasedCourse = findCourseInPurchasedCourses(
-        req.student,
-        req.params.id
-    );
+// const deleteReview = asyncHandler(async (req, res) => {
+//     const purchasedCourse = findCourseInPurchasedCourses(
+//         req.student,
+//         req.params.id
+//     );
 
-    if (!purchasedCourse) {
-        res.status(404);
-        throw new Error("Buy the course to review it.");
-    }
+//     if (!purchasedCourse) {
+//         res.status(404);
+//         throw new Error("Buy the course to review it.");
+//     }
 
-    const course = await Course.findByIdAndUpdate(
-        req.params.id,
-        {
-            $pull: { courseReviews: { user: req.student._id } },
-        },
-        { new: true }
-    );
+//     const course = await Course.findByIdAndUpdate(
+//         req.params.id,
+//         {
+//             $pull: { courseReviews: { user: req.student._id } },
+//         },
+//         { new: true }
+//     );
 
-    const reviewed = findReviewedCourses(course, req.student._id);
+//     await course.save();
 
-    if (!reviewed) {
-        res.status(404);
-        throw new Error("Review not found");
-    }
+//     const newCourse = await Course.findById(req.params.id);
 
-    await course.save();
-    res.status(200).json({ message: "Deleted Successfully" });
-});
+//     if (course.courseReviews.length >= 1) {
+//         newCourse.avgRating =
+//             newCourse.courseReviews.reduce((acc, review) => {
+//                 return review.rating + acc;
+//             }, 0) / course.courseReviews.length;
+//         await newCourse.save();
+
+//         const getTotalRating = await Instructor.findById(
+//             newCourse.createdBy
+//         ).populate("courses", "avgRating");
+//         const divide = getTotalRating.courses.filter((rating) => {
+//             return rating.avgRating >= 1;
+//         });
+
+//         getTotalRating.avgRating =
+//             getTotalRating.courses.reduce((acc, review) => {
+//                 return review.avgRating + acc;
+//             }, 0) / divide.length;
+
+//         await getTotalRating.save();
+//         return res.status(200).json({ message: "Deleted Successfully" });
+//     }
+
+//     newCourse.avgRating = 0;
+//     await newCourse.save();
+//     const getTotalRating = await Instructor.findById(course.createdBy).populate(
+//         "courses",
+//         "avgRating"
+//     );
+//     const divide = getTotalRating.courses.filter((rating) => {
+//         return rating.avgRating >= 1;
+//     });
+
+//     getTotalRating.avgRating =
+//         getTotalRating.courses.reduce((acc, review) => {
+//             return review.avgRating + acc;
+//         }, 0) / divide.length;
+
+//     await getTotalRating.save();
+//     res.status(200).json({ message: "Deleted Successfully" });
+// });
 
 //@ desc Remove all reviews
 //@ route /course/reviews
@@ -121,4 +207,4 @@ const deleteAllReviews = asyncHandler(async (req, res) => {
     await course.save();
 });
 
-export { addReview, deleteReview, deleteAllReviews };
+export { addReview, deleteAllReviews, updateReview };
