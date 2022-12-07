@@ -1,171 +1,237 @@
-import Course from '../models/Course.js';
-import asyncHandler from 'express-async-handler';
-import Instructor from '../models/Instructor.js';
-import cloudinary from '../config/cloudinary.js';
+import Course from "../models/Course.js";
+import asyncHandler from "express-async-handler";
+import Instructor from "../models/Instructor.js";
+import cloudinary from "../config/cloudinary.js";
 
 //@ desc Get all courses
 //@ route /courses
 //@ access Public/ for testing only
 const getAllCourses = asyncHandler(async (req, res) => {
-	const courses = await Course.find();
+    const courses = await Course.find().select("-videos");
 
-	if (courses.length === 0) {
-		res.status(404);
-		throw new Error('No courses found');
-	}
+    if (courses.length === 0) {
+        res.status(404);
+        throw new Error("No courses found");
+    }
 
-	res.status(200).json({ courses });
+    res.status(200).json({ courses });
 });
 
 //@ desc Create new course
 //@ route /course
 //@ access Private
 const createCourse = asyncHandler(async (req, res) => {
-	const { ttl, desc, fullDesc, languageOfCourse, level, category, prc, img, courseRequirements } = req.body;
+    const {
+        ttl,
+        desc,
+        fullDesc,
+        languageOfCourse,
+        level,
+        category,
+        prc,
+        img,
+        courseRequirements,
+    } = req.body;
 
-	if (!ttl && !desc && !fullDesc && !img) {
-		res.status(400);
-		throw new Error('Fields is required');
-	}
+    if (!ttl && !desc && !fullDesc && !img) {
+        res.status(400);
+        throw new Error("Fields is required");
+    }
 
-	const instructor = await Instructor.findOne({ studentID: req.student._id });
+    const titleExist = await Course.findOne({ ttl });
+    if (titleExist) {
+        res.status(400);
+        throw new Error("Title already exist");
+    }
 
-	if (!instructor) {
-		res.status(400);
-		throw new Error('Could not find Instructor');
-	}
+    const instructor = await Instructor.findOne({ studentID: req.student._id });
 
-	let uploadRes;
-	try {
-		uploadRes = await cloudinary.v2.uploader.upload(img, {
-			folder: "courseImg",
-			resource_type: "auto",
-		});
-	} catch (error) {
-		return res.status(400).json({ message: error });
-	}
+    if (!instructor) {
+        res.status(400);
+        throw new Error("Could not find Instructor");
+    }
 
-	const course = new Course({
-		createdBy: instructor._id,
-		ttl,
-		desc,
-		fullDesc,
-		languageOfCourse,
-		category,
-		prc,
-		newPrc: prc,
-		level,
-		courseRequirements,
-		img: {
-			public_id: uploadRes.public_id,
-			url: uploadRes.secure_url
-		}
-	});
+    let uploadRes;
+    try {
+        uploadRes = await cloudinary.v2.uploader.upload(img, {
+            folder: "courseImg",
+            resource_type: "auto",
+        });
+    } catch (error) {
+        return res.status(400).json({ message: error });
+    }
 
-	instructor.courses.push(course._id);
-	req.student.coursesTaken.push(course._id);
-	instructor.numberOfCourses++;
+    const course = new Course({
+        createdBy: instructor._id,
+        ttl,
+        desc,
+        fullDesc,
+        languageOfCourse,
+        category,
+        prc,
+        newPrc: prc,
+        level,
+        courseRequirements,
+        img: {
+            public_id: uploadRes.public_id,
+            url: uploadRes.secure_url,
+        },
+    });
 
-	await instructor.save();
-	await req.student.save();
-	await course.save();
+    instructor.courses.push(course._id);
+    req.student.coursesTaken.push(course._id);
+    instructor.numberOfCourses++;
 
-	res.status(201).json({ course });
+    await instructor.save();
+    await req.student.save();
+    await course.save();
+
+    res.status(201).json({ course });
 });
 
 //@ desc Add course videos
 //@ route /course/id/videos
 //@ access Private
 const addCourseVideos = asyncHandler(async (req, res) => {
-	const course = await Course.findByIdAndUpdate(req.params.id, {
-		$push: {
-			videos: { $each: req.body }
-		}
-	});
-	
-	if (!course) {
-		res.status(404);
-		throw new Error('Course not exists');
-	}
+    const course = await Course.findByIdAndUpdate(req.params.id, {
+        $push: {
+            videos: { $each: req.body },
+        },
+    });
 
-	const totalDuration = await Course.findById(req.params.id)
-	let tot = 0
-	totalDuration.videos.forEach((dur)=>{
-		tot += dur.sectionDuration
-	})
+    if (!course) {
+        res.status(404);
+        throw new Error("Course not exists");
+    }
 
-	totalDuration.totalDuration = tot
-	await totalDuration.save();
-	res.status(201).json({ message: 'Videos added successfully.', data: totalDuration });
+    const getCourse = await Course.findById(req.params.id);
+    if (!getCourse) {
+        res.status(400);
+        throw new Error("Could not find course");
+    }
+
+    getCourse.videos.forEach(async function (dur) {
+        let totSection = dur.video.reduce(function (item, elem) {
+            return item + elem.duration;
+        }, 0);
+        dur.sectionDuration = totSection;
+    });
+    await getCourse.save();
+
+    let tot = 0;
+    getCourse.videos.forEach((dur) => {
+        tot += dur.sectionDuration;
+    });
+    getCourse.totalDuration = tot;
+    await getCourse.save();
+    res.status(201).json({
+        message: "Videos added successfully.",
+        data: totalDuration,
+    });
 });
 
 //@ desc Update course videos
 //@ route /course/id/videos
 //@ access Private
 const updateCourseVideos = asyncHandler(async (req, res) => {
-	const course = await Course.findByIdAndUpdate(req.params.id, {
-		$set: {
-			"videos.$[outer].section": req.body.titleSection,
-			"videos.$[outer].video.$[inner].title": req.body.title,
-			"videos.$[outer].video.$[inner].url": req.body.url,
-			"videos.$[outer].video.$[inner].duration": req.body.duration,
-		}
-	}, {
-		arrayFilters: [
-			{"outer._id": req.body.idSection},
-			{"inner._id": req.body.idVideo}
-		]
-	});
+    const course = await Course.findByIdAndUpdate(
+        req.params.id,
+        {
+            $set: {
+                "videos.$[outer].section": req.body.titleSection,
+                "videos.$[outer].video.$[inner].title": req.body.title,
+                "videos.$[outer].video.$[inner].url": req.body.url,
+                "videos.$[outer].video.$[inner].duration": req.body.duration,
+            },
+        },
+        {
+            arrayFilters: [
+                { "outer._id": req.body.idSection },
+                { "inner._id": req.body.idVideo },
+            ],
+        }
+    );
 
-	if (!course) {
-		res.status(404);
-		throw new Error('Course not exists');
-	}
-	await course.save();
+    if (!course) {
+        res.status(404);
+        throw new Error("Course not exists");
+    }
+    await course.save();
 
-	const totalDuration = await Course.findById(req.params.id)
-	let tot = 0
-	totalDuration.videos.forEach((dur)=>{
-		tot += dur.sectionDuration
-	})
+    const getCourse = await Course.findById(req.params.id);
+    if (!getCourse) {
+        res.status(400);
+        throw new Error("Could not find course");
+    }
 
-	totalDuration.totalDuration = tot
-	await totalDuration.save();
-	res.status(201).json({ message: 'Videos added successfully.', data: course });
+    getCourse.videos.forEach(async function (dur) {
+        let totSection = dur.video.reduce(function (item, elem) {
+            return item + elem.duration;
+        }, 0);
+        dur.sectionDuration = totSection;
+    });
+    await getCourse.save();
+
+    let tot = 0;
+    getCourse.videos.forEach((dur) => {
+        tot += dur.sectionDuration;
+    });
+    getCourse.totalDuration = tot;
+    await getCourse.save();
+
+    res.status(201).json({
+        message: "Videos added successfully.",
+        data: course,
+    });
 });
 
 //@ desc Get A specific course
 //@ route /course/id
 //@ access Public
 const getCourse = asyncHandler(async (req, res) => {
-	const sumTotalDur = await Course.aggregate([
-		{
-			$group: {
-				_id: null,
-				totalDuration: {
-					$sum: {$sum: videos.sectionDuration}
-				}
-			}
-		}
-	])
+    const getCourse = await Course.findById(req.params.id);
+    if (!getCourse) {
+        res.status(400);
+        throw new Error("Could not find course");
+    }
 
-	console.log(sumTotalDur)
-	const course = await Course.findById(req.params.id)
-		.populate('createdBy', [
-			'name',
-			'profession',
-			'aboutMe',
-			'numberOfCourses',
-			'numberOfReviews',
-		]) // 2nd argument is to return specified elements of the object
-		.exec();
+    getCourse.videos.forEach(async function (dur) {
+        let totSection = dur.video.reduce(function (item, elem) {
+            return item + elem.duration;
+        }, 0);
+        dur.sectionDuration = totSection;
+    });
+    await getCourse.save();
 
-	if (!course) {
-		res.status(400);
-		throw new Error('Could not find course');
-	}
+    let tot = 0;
+    getCourse.videos.forEach((dur) => {
+        tot += dur.sectionDuration;
+    });
+    getCourse.totalDuration = tot;
+    await getCourse.save();
 
-	res.status(200).json({ course });
+    const course = await Course.findById(req.params.id)
+        .populate("createdBy", [
+            "name",
+            "profession",
+            "aboutMe",
+            "numberOfCourses",
+            "numberOfReviews",
+        ])
+        .exec();
+
+    if (!course) {
+        res.status(400);
+        throw new Error("Could not find course");
+    }
+
+    res.status(200).json({ course });
 });
 
-export { getAllCourses, createCourse, getCourse, addCourseVideos, updateCourseVideos };
+export {
+    getAllCourses,
+    createCourse,
+    getCourse,
+    addCourseVideos,
+    updateCourseVideos,
+};
