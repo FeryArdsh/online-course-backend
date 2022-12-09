@@ -72,6 +72,7 @@ const createCourse = asyncHandler(async (req, res) => {
         newPrc: prc,
         level,
         courseRequirements,
+        enrolled: 1,
         img: {
             public_id: uploadRes.public_id,
             url: uploadRes.secure_url,
