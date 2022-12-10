@@ -5,6 +5,7 @@ import {
 } from "../utils/helperFunctions.js";
 import Course from "../models/Course.js";
 import Student from "../models/Student.js";
+import Instructor from "../models/Instructor.js";
 
 //@ desc Remove all courses
 //@ route /course/remove
@@ -27,8 +28,13 @@ const purchaseCourse = asyncHandler(async (req, res) => {
         res.status(400);
         throw new Error("Can not purcase twice");
     }
-    const course = await Course.find({ _id: { $in: req.body.data } });
 
+    let date = new Date().toLocaleString("en-us", {
+        month: "short",
+        year: "numeric",
+    });
+
+    const course = await Course.find({ _id: { $in: req.body.data } });
     if (course.length === 0) {
         res.status(400);
         throw new Error("Course not found.");
@@ -38,6 +44,32 @@ const purchaseCourse = asyncHandler(async (req, res) => {
         res.status(400);
         throw new Error("Course not correct.");
     }
+
+    const getInstructor = course.map((e) => {
+        return {
+            date,
+            instructorId: e.createdBy,
+            amount: e.prc,
+        };
+    });
+    for (const dataNew of getInstructor) {
+        const final = await Instructor.findOneAndUpdate(
+            { _id: dataNew.instructorId },
+            {
+                $push: {
+                    income: {
+                        date: dataNew.date,
+                        amount: dataNew.amount,
+                    },
+                },
+            }
+        );
+        if (!final) {
+            res.status(400);
+            throw new Error("Course not correct.");
+        }
+    }
+
     req.student.coursesTaken.push(...req.body.data);
 
     await req.student.save();
