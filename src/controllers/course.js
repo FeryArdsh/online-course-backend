@@ -87,7 +87,7 @@ const createCourse = asyncHandler(async (req, res) => {
     await req.student.save();
     await course.save();
 
-    res.status(201).json({ course });
+    res.status(201).json({ message: "success add course", course });
 });
 
 //@ desc Add course videos
@@ -124,10 +124,10 @@ const addCourseVideos = asyncHandler(async (req, res) => {
         tot += dur.sectionDuration;
     });
     getCourse.totalDuration = tot;
+    getCourse.publish = true;
     await getCourse.save();
     res.status(201).json({
         message: "Videos added successfully.",
-        data: totalDuration,
     });
 });
 
