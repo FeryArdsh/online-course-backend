@@ -39,7 +39,7 @@ const InstructorSchema = new Schema({
     },
     income: [
         {
-            month: Date,
+            month: String,
             amount: Number,
         },
     ],

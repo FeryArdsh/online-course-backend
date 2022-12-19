@@ -58,7 +58,7 @@ const purchaseCourse = asyncHandler(async (req, res) => {
             {
                 $push: {
                     income: {
-                        date: dataNew.date,
+                        month: dataNew.date,
                         amount: dataNew.amount,
                     },
                 },

@@ -127,7 +127,9 @@ const loginStudent = asyncHandler(async (req, res) => {
 //@route /profile/me
 //@access private
 const getStudentProfile = asyncHandler(async (req, res) => {
-    const student = await Student.findById(req.student._id);
+    const student = await Student.findById(req.student._id).populate(
+        "coursesTaken"
+    );
 
     if (!student) {
         res.status(404);
