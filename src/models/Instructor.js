@@ -6,7 +6,6 @@ const InstructorSchema = new Schema({
     profession: {
         type: String,
         required: true,
-        maxlength: 20,
     },
     aboutMe: {
         type: String,
