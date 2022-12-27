@@ -5,6 +5,7 @@ import {
     getAllInstructors,
     deleteInstructorProfile,
     updateInstructorProfile,
+    getInstructorCoursesById,
 } from "../controllers/instructor.js";
 import { getInstructorCourses } from "../controllers/instructor.js";
 
@@ -23,5 +24,7 @@ router
 router
     .route("/courses/instructor")
     .get(authMiddleware, instructorMiddleware, getInstructorCourses);
+
+router.route("/course-instructor/:id").get(getInstructorCoursesById);
 
 export default router;

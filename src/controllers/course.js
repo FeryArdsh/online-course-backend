@@ -214,10 +214,16 @@ const getCourse = asyncHandler(async (req, res) => {
     const course = await Course.findById(req.params.id)
         .populate({
             path: "createdBy",
-            populate: {
-                path: "studentID",
-                select: ["name", "imgProfil"],
-            },
+            populate: [
+                {
+                    path: "studentID",
+                    select: ["name", "imgProfil"],
+                },
+                {
+                    path: "courses",
+                    select: ["-videos", "-courseReviews"],
+                },
+            ],
         })
         .exec();
 

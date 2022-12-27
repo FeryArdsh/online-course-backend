@@ -71,8 +71,9 @@ const purchaseCourse = asyncHandler(async (req, res) => {
     }
 
     req.student.coursesTaken.push(...req.body.data);
-
+    course.enrolled += 1;
     await req.student.save();
+    await course.save();
 
     res.status(200).json({ message: "Course purchased successfully" });
 });
@@ -149,6 +150,22 @@ const removeCourseFromWishList = asyncHandler(async (req, res) => {
     res.status(200).json({ message: "Removed Successfully" });
 });
 
+const courseTakenStudent = asyncHandler(async (req, res) => {
+    const student = await Student.findById(
+        req.student._id,
+        "coursesTaken"
+    ).populate("coursesTaken");
+
+    if (!student) {
+        res.status(404);
+        throw new Error("Can't get student profile");
+    }
+
+    res.json({
+        student,
+    });
+});
+
 export {
     wishListCourse,
     getWishListedCourses,
@@ -156,4 +173,5 @@ export {
     purchaseCourse,
     removeAllCourses,
     refundCourse,
+    courseTakenStudent,
 };

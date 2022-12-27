@@ -88,10 +88,33 @@ const getInstructorCourses = asyncHandler(async (req, res) => {
     res.status(200).json({ courses: instructor.courses });
 });
 
+const getInstructorCoursesById = asyncHandler(async (req, res) => {
+    const instructor = await Instructor.findOne({
+        $or: [{ _id: req.params.id }, { studentID: req.params.id }],
+    }).populate([
+        {
+            path: "courses",
+            select: "-videos",
+        },
+        {
+            path: "studentID",
+            select: ["name", "imgProfil"],
+        },
+    ]);
+    // .exec();
+
+    if (!instructor) {
+        res.status(404);
+        throw new Error("Instructor not found.");
+    }
+
+    res.status(200).json({ instructor });
+});
 export {
     getInstructorProfile,
     getAllInstructors,
     deleteInstructorProfile,
     updateInstructorProfile,
     getInstructorCourses,
+    getInstructorCoursesById,
 };
