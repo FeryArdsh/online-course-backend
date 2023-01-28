@@ -70,10 +70,18 @@ const purchaseCourse = asyncHandler(async (req, res) => {
         }
     }
 
+    for (const dataNew of course) {
+        const final = await Course.findByIdAndUpdate(dataNew._id, {
+            $inc: { enrolled: 1 },
+        });
+        if (!final) {
+            res.status(400);
+            throw new Error("Course not correct.");
+        }
+    }
+
     req.student.coursesTaken.push(...req.body.data);
-    course.enrolled += 1;
     await req.student.save();
-    await course.save();
 
     res.status(200).json({ message: "Course purchased successfully" });
 });

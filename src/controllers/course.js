@@ -30,6 +30,7 @@ const createCourse = asyncHandler(async (req, res) => {
         category,
         prc,
         img,
+        videoPromotion,
         courseRequirements,
     } = req.body;
 
@@ -73,6 +74,7 @@ const createCourse = asyncHandler(async (req, res) => {
         level,
         courseRequirements,
         enrolled: 1,
+        videoPromotion,
         img: {
             public_id: uploadRes.public_id,
             url: uploadRes.secure_url,

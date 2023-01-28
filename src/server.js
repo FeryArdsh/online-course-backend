@@ -12,7 +12,6 @@ import { errorMiddleware, notFound } from "./middleware/errorMiddleware.js";
 const PORT = 5000 || process.env.PORT;
 
 dotenv.config();
-connectDB();
 
 const app = express();
 app.use(cors());
@@ -29,6 +28,8 @@ app.use(reviewRouter);
 app.use(notFound);
 app.use(errorMiddleware);
 
-app.listen(PORT, () => {
-    console.log(`Server running in PORT ${PORT}`);
+connectDB().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server running in PORT ${PORT}`);
+    });
 });

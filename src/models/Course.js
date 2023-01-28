@@ -78,6 +78,9 @@ const CourseSchema = new Schema(
             type: Number,
             default: 0,
         },
+        videoPromotion: {
+            type: String,
+        },
         disc: {
             type: Number,
             default: 0,
