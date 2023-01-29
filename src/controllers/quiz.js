@@ -21,29 +21,33 @@ const getScoreQuiz = asyncHandler(async (req, res) => {
         0
     );
 
-    const foo = 1;
-    let output = 0;
-    switch (foo) {
+    let grade = 0;
+    switch (result) {
         case 0:
-            output = 0;
+            grade = 0;
             break;
         case 1:
-            output = 20;
+            grade = 20;
             break;
         case 2:
-            output = 40;
+            grade = 40;
             break;
         case 3:
-            output = 60;
+            grade = 60;
             break;
         case 4:
-            output = 80;
+            grade = 80;
+            break;
+        case 5:
+            grade = 100;
             break;
         default:
-            output = 100;
+            grade = "Terjadi Kesalahan";
     }
 
-    res.status(200).json("Hasil");
+    res.status(200).json({
+        grade,
+    });
 });
 
 const addQuiz = asyncHandler(async (req, res) => {

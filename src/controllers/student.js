@@ -174,6 +174,33 @@ const courseTakenStudent = asyncHandler(async (req, res) => {
     });
 });
 
+const certificateCourse = asyncHandler(async (req, res) => {
+    const idCourse = req.params.id;
+    const checkCerti = await Student.findById(req.student._id, "certificate");
+    if (
+        checkCerti.certificate.find((e) => e.idCourse.toString() === idCourse)
+    ) {
+        res.status(400);
+        throw new Error("Kamu sudah mendapatkan sertifikat");
+    }
+
+    const student = await Student.findByIdAndUpdate(req.student._id, {
+        $push: {
+            certificate: {
+                idCourse,
+                isGraduate: true,
+            },
+        },
+    });
+
+    if (!student) {
+        res.status(404);
+        throw new Error("Can't get student profile");
+    }
+
+    res.json("Berhasil Mendapatkan Sertifikat");
+});
+
 export {
     wishListCourse,
     getWishListedCourses,
@@ -182,4 +209,5 @@ export {
     removeAllCourses,
     refundCourse,
     courseTakenStudent,
+    certificateCourse,
 };
