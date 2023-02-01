@@ -8,12 +8,14 @@ import {
     getWishListedCourses,
     courseTakenStudent,
     certificateCourse,
+    getCertificate,
 } from "../controllers/student.js";
 import { authMiddleware } from "../middleware/auth.js";
 const router = express.Router();
 
 router.route("/course/purchase").post(authMiddleware, purchaseCourse);
 router.route("/certificate/:id").post(authMiddleware, certificateCourse);
+router.route("/download/:id").post(authMiddleware, getCertificate);
 router.route("/course/:id/refund").post(authMiddleware, refundCourse);
 router
     .route("/course/:id/wishlist")

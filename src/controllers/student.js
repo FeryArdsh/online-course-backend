@@ -188,7 +188,7 @@ const certificateCourse = asyncHandler(async (req, res) => {
         $push: {
             certificate: {
                 idCourse,
-                isGraduate: true,
+                isGraduate: false,
             },
         },
     });
@@ -201,6 +201,35 @@ const certificateCourse = asyncHandler(async (req, res) => {
     res.json("Berhasil Mendapatkan Sertifikat");
 });
 
+const getCertificate = asyncHandler(async (req, res) => {
+    const idCourse = req.params.id;
+    const checkCerti = await Student.findById(req.student._id, "certificate");
+    const isDownload = checkCerti.certificate.find(
+        (e) => e.idCourse.toString() === idCourse
+    );
+    if (isDownload.isGraduate) {
+        res.status(400);
+        throw new Error("Kesempatan Download Satu Kali");
+    }
+
+    const student = await Student.updateOne(
+        { _id: req.student._id },
+        {
+            $set: { "certificate.$[element].isGraduate": true },
+        },
+        {
+            arrayFilters: [{ "element.idCourse": idCourse }],
+        }
+    );
+
+    if (!student) {
+        res.status(404);
+        throw new Error("Can't get student profile");
+    }
+
+    res.json("Berhasil Download Sertifikat");
+});
+
 export {
     wishListCourse,
     getWishListedCourses,
@@ -210,4 +239,5 @@ export {
     refundCourse,
     courseTakenStudent,
     certificateCourse,
+    getCertificate,
 };

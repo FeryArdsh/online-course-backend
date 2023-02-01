@@ -4,6 +4,6 @@ const router = express.Router();
 
 router.route("/quiz/:id").post(addQuiz);
 router.route("/quiz/:id").get(getQuizById);
-router.route("/correct-quiz/:id").get(getScoreQuiz);
+router.route("/correct-quiz/:id").post(getScoreQuiz);
 
 export default router;
